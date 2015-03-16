@@ -38,7 +38,7 @@ void FortuneThread::run()
 
     while(!quit)
     {
-        const int timeout = 5 * 100;
+        const int timeout = 5 * 1000;
 
         QTcpSocket socket;
         socket.connectToHost(serverName, serverPort);
@@ -47,6 +47,15 @@ void FortuneThread::run()
         {
             emit error(socket.error(), socket.errorString() );
             return;
+        }
+
+        while(socket.bytesAvailable() < static_cast<int>(sizeof(quint16) ) )
+        {
+            if(!socket.waitForReadyRead(timeout) )
+            {
+                emit error(socket.error(), socket.errorString() );
+                return;
+            }
         }
     }
 }

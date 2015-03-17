@@ -10,7 +10,11 @@ FortuneThread::FortuneThread(QObject *parent)
 
 FortuneThread::~FortuneThread()
 {
-
+    mutex.lock();
+    quit = true;
+    cond.wakeOne();
+    mutex.unlock();
+    wait();
 }
 
 void FortuneThread::requestNewFortune(const QString &a_hostName, quint16 port)
@@ -57,6 +61,30 @@ void FortuneThread::run()
                 return;
             }
         }
+
+        quint16 blockSize;
+        QDataStream in(&socket);
+        in.setVersion(QDataStream::Qt_4_0);
+        in >> blockSize;
+
+        while(socket.bytesAvailable() < blockSize)
+        {
+            if(!socket.waitForReadyRead(timeout) )
+            {
+                emit error(socket.error(), socket.errorString() );
+                return;
+            }
+        }
+
+        mutex.lock();
+        QString fortune;
+        in >> fortune;
+        emit newFortune(fortune);
+
+        cond.wait(&mutex);
+        serverName = hostName;
+        serverPort = port;
+        mutex.unlock();
     }
 }
 

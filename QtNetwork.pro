@@ -15,7 +15,14 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         blockingclient.cpp \
-    fortunethread.cpp
+    fortunethread.cpp \
+    httpwindow.cpp
 
 HEADERS  += blockingclient.h \
-    fortunethread.h
+    fortunethread.h \
+    httpwindow.h
+
+DISTFILES +=
+
+FORMS += \
+    authenticationdialog.ui

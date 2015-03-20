@@ -1,11 +1,20 @@
 #include "httpwindow.h"
 
-httpwindow::httpwindow()
-{
+#include <QLabel>
+#include <QLineEdit>
+#include <QProgressDialog>
+#include <QDialogButtonBox>
+#include <QNetworkReply>
 
+HttpWindow::HttpWindow(QWidget *parent)
+    :QDialog(parent)
+{
+#ifndef QT_NO_SSL
+#else
+#endif
 }
 
-httpwindow::~httpwindow()
+HttpWindow::~HttpWindow()
 {
 
 }

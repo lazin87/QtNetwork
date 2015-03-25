@@ -89,7 +89,7 @@ void HttpWindow::startRequest(QUrl url)
     connect( reply, SIGNAL(finished() )
            , this, SLOT(httpFinished() )
            );
-    connect( reply, SIGNAL(readRead() )
+    connect( reply, SIGNAL(readyRead() )
            , this, SLOT(httpReadyRead() )
            );
     connect( reply, SIGNAL(downloadProgress(qint64,qint64) )

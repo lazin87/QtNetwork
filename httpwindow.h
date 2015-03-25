@@ -11,6 +11,7 @@ class QProgressDialog;
 class QDialogButtonBox;
 class QNetworkReply;
 class QFile;
+class QPushButton;
 
 class HttpWindow : public QDialog
 {
@@ -37,6 +38,8 @@ private:
     QLabel *urlLabel;
     QLineEdit *urlLineEdit;
     QProgressDialog *progressDialog;
+    QPushButton *downloadButton;
+    QPushButton *quitButton;
     QDialogButtonBox *buttonBox;
 
     QUrl url;

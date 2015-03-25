@@ -1,4 +1,5 @@
 #include "httpwindow.h"
+#include "ui_authenticationdialog.h"
 
 #include <QLabel>
 #include <QLineEdit>
@@ -12,6 +13,7 @@
 #include <QVBoxLayout>
 #include <QMessageBox>
 #include <QDir>
+#include <QAuthenticator>
 
 HttpWindow::HttpWindow(QWidget *parent)
     : QDialog(parent)
@@ -42,7 +44,7 @@ HttpWindow::HttpWindow(QWidget *parent)
     progressDialog = new QProgressDialog(this);
 
     connect( urlLineEdit, SIGNAL(textChanged(QString) )
-           , this, SLOT(enabeDownloadButton() )
+           , this, SLOT(enableDownloadButton() )
            );
     connect( &qnam, SIGNAL(authenticationRequired(QNetworkReply*,QAuthenticator*))
            , this, SLOT(slotAuthenticationRequired(QNetworkReply*,QAuthenticator*))
@@ -220,26 +222,69 @@ void HttpWindow::httpFinished()
 
 void HttpWindow::httpReadyRead()
 {
-
+    if(file)
+    {
+        file->write(reply->readAll() );
+    }
 }
 
 void HttpWindow::updateDataReadProgress(qint64 bytesRead, qint64 totalBytes)
 {
+    if(httpRequestAborted)
+    {
+        return;
+    }
 
+    progressDialog->setMaximum(totalBytes);
+    progressDialog->setValue(bytesRead);
 }
 
-void HttpWindow::enabeDownloadButton()
+void HttpWindow::enableDownloadButton()
 {
-
+    downloadButton->setEnabled(!urlLineEdit->text().isEmpty() );
 }
 
-void HttpWindow::slotAuthenticationRequired(QNetworkReply *, QAuthenticator *)
+void HttpWindow::slotAuthenticationRequired(QNetworkReply *, QAuthenticator *authenticator)
 {
+    QDialog dlg;
+    Ui::Dialog ui;
 
+    ui.setupUi(&dlg);
+    dlg.adjustSize();
+    ui.siteDescription->setText(tr("%1 at %2").arg(authenticator->realm() ).arg(url.host() ) );
+
+    ui.userEdit->setText(url.userName() );
+    ui.passwordEdit->setText(url.password() );
+
+    if(QDialog::Accepted == dlg.exec() )
+    {
+        authenticator->setUser(ui.userEdit->text() );
+        authenticator->setPassword(ui.passwordEdit->text() );
+    }
 }
 
+#ifndef QT_NO_SSL
 void HttpWindow::sslErrors(QNetworkReply *, const QList<QSslError> &errors)
 {
+    QString errorString;
+    foreach(const QSslError &error, errors)
+    {
+        if(!errorString.isEmpty() )
+        {
+            errorString += ", ";
+        }
+        errorString += error.errorString();
+    }
 
+    int iResult = QMessageBox::warning( this
+                                      , tr("HTTP")
+                                      , tr("One or more SSL errors has occured: %1").arg(errorString)
+                                      , QMessageBox::Ignore | QMessageBox::Abort
+                                      );
+    if(QMessageBox::Ignore == iResult)
+    {
+        reply->ignoreSslErrors();
+    }
 }
+#endif
 

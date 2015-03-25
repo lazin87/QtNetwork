@@ -21,6 +21,8 @@ public:
     HttpWindow(QWidget * parent = 0);
     ~HttpWindow();
 
+    void startRequest(QUrl url);
+
 private slots:
     void downloadFile();
     void cancelDownload();

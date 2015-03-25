@@ -11,6 +11,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QMessageBox>
+#include <QDir>
 
 HttpWindow::HttpWindow(QWidget *parent)
     : QDialog(parent)
@@ -146,12 +147,75 @@ void HttpWindow::downloadFile()
 
 void HttpWindow::cancelDownload()
 {
-
+    statusLabel->setText(tr("Download canceled.") );
+    httpRequestAborted = true;
+    reply->abort();
+    downloadButton->setEnabled(true);
 }
 
 void HttpWindow::httpFinished()
 {
+    if(httpRequestAborted)
+    {
+        if(file)
+        {
+            file->close();
+            file->remove();
+            delete file;
+            file = 0;
+        }
 
+        reply->deleteLater();
+        progressDialog->hide();
+
+        return;
+    }
+
+    progressDialog->hide();
+    file->flush();
+    file->close();
+
+    QVariant redirectionTarget = reply->attribute(QNetworkRequest::RedirectionTargetAttribute);
+
+    if(reply->error() )
+    {
+        file->remove();
+        QMessageBox::information( this
+                                , tr("HTTP")
+                                , tr("Download faild: %1.").arg(reply->errorString() )
+                                );
+        downloadButton->setEnabled(true);
+    }
+    else if(!redirectionTarget.isNull() )
+    {
+        QUrl newUrl = url.resolved(redirectionTarget.toUrl() );
+        int iResult = QMessageBox::question( this
+                                           , tr("HTTP")
+                                           , tr("Redirect to %1 ?").arg(newUrl.toString() )
+                                           , QMessageBox::Yes | QMessageBox::No
+                                           );
+
+        if(QMessageBox::Yes == iResult)
+        {
+            url = newUrl;
+            reply->deleteLater();
+            file->open(QIODevice::WriteOnly);
+            file->resize(0);
+            startRequest(url);
+            return;
+        }
+    }
+    else
+    {
+        QString fileName = QFileInfo(QUrl(urlLineEdit->text() ).path() ).fileName();
+        statusLabel->setText(tr("Downloaded %1 to %2.").arg(fileName).arg(QDir::currentPath() ) );
+        downloadButton->setEnabled(true);
+    }
+
+    reply->deleteLater();
+    reply = 0;
+    delete file;
+    file = 0;
 }
 
 void HttpWindow::httpReadyRead()
